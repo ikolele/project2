@@ -5,6 +5,7 @@ pipeline {
     DOCKER_IMAGE = "ikomajic/project2"
     IMAGE_TAG    = "${BUILD_NUMBER}"
     IMAGE        = "${DOCKER_IMAGE}:${IMAGE_TAG}"
+    KUBECONFIG   = "C:\\Users\\ivanm\\.kube\\config"
   }
 
   stages {
