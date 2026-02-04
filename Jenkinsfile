@@ -2,46 +2,66 @@ pipeline {
   agent any
 
   environment {
-    IMAGE = 'ikomajic/project2:latest'
+    DOCKER_IMAGE = "ikolele/project2"
+    IMAGE_TAG    = "${BUILD_NUMBER}"
+    IMAGE        = "${DOCKER_IMAGE}:${IMAGE_TAG}"
   }
 
   stages {
+
     stage('Checkout') {
       steps {
         checkout scm
       }
     }
 
-    stage('Build Image') {
+    stage('Docker Build') {
       steps {
-        dir('app') {
-          sh 'docker build -t $IMAGE .'
-        }
+        bat '''
+          docker build -t %IMAGE% .
+        '''
       }
     }
 
-    stage('Login to Docker Hub') {
+    stage('Docker Login') {
       steps {
         withCredentials([usernamePassword(
-          credentialsId: 'dockerhub-creds',
+          credentialsId: 'dockerhub',
           usernameVariable: 'DOCKER_USER',
           passwordVariable: 'DOCKER_PASS'
         )]) {
-          sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+          bat '''
+            echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
+          '''
         }
       }
     }
 
     stage('Push Image') {
       steps {
-        sh 'docker push $IMAGE'
+        bat '''
+          docker push %IMAGE%
+        '''
       }
     }
 
     stage('Deploy to Kubernetes') {
       steps {
-        sh 'helm upgrade --install project2 ./helm'
+        bat '''
+          helm upgrade --install project2 ./helm ^
+            --set image.repository=%DOCKER_IMAGE% ^
+            --set image.tag=%IMAGE_TAG%
+        '''
       }
+    }
+  }
+
+  post {
+    success {
+      echo '✅ Pipeline completed successfully'
+    }
+    failure {
+      echo '❌ Pipeline failed'
     }
   }
 }
