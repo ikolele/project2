@@ -1,68 +1,34 @@
 pipeline {
-  agent any
+    agent any
 
-  environment {
-    DOCKER_IMAGE = "ikomajic/project2"
-    IMAGE_TAG    = "${BUILD_NUMBER}"
-    IMAGE        = "${DOCKER_IMAGE}:${IMAGE_TAG}"
-    KUBECONFIG   = "C:\\Users\\ivanm\\.kube\\config"
-  }
-
-  stages {
-
-    stage('Checkout') {
-      steps {
-        checkout scm
-      }
+    environment {
+        DOCKERHUB_USER = 'ikomajic'
+        IMAGE_NAME = 'project2-demo'
     }
 
-    stage('Docker Build') {
-      steps {
-        bat '''
-          docker build -t %IMAGE% .
-        '''
-      }
-    }
-
-    stage('Docker Login') {
-      steps {
-        withCredentials([usernamePassword(
-          credentialsId: 'dockerhub',
-          usernameVariable: 'DOCKER_USER',
-          passwordVariable: 'DOCKER_PASS'
-        )]) {
-          bat '''
-            echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
-          '''
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
         }
-      }
-    }
 
-    stage('Push Image') {
-      steps {
-        bat '''
-          docker push %IMAGE%
-        '''
-      }
-    }
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    docker.build("${DOCKERHUB_USER}/${IMAGE_NAME}:latest")
+                }
+            }
+        }
 
-    stage('Deploy to Kubernetes') {
-      steps {
-        bat '''
-          helm upgrade --install project2 ./helm ^
-            --set image.repository=%DOCKER_IMAGE% ^
-            --set image.tag=%IMAGE_TAG%
-        '''
-      }
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
+                        docker.image("${DOCKERHUB_USER}/${IMAGE_NAME}:latest").push()
+                    }
+                }
+            }
+        }
     }
-  }
-
-  post {
-    success {
-      echo '✅ Pipeline completed successfully'
-    }
-    failure {
-      echo '❌ Pipeline failed'
-    }
-  }
 }
