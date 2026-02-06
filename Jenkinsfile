@@ -4,9 +4,12 @@ pipeline {
     environment {
         DOCKERHUB_USER = 'ikomajic'
         IMAGE_NAME = 'project2-demo'
+        K8S_RELEASE = 'project2-helm'
+        HELM_CHART_PATH = 'helm/project2-helm'
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 checkout scm
@@ -15,19 +18,37 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    docker.build("${DOCKERHUB_USER}/${IMAGE_NAME}:latest")
+                sh "docker build -t ${DOCKERHUB_USER}/${IMAGE_NAME}:latest ."
+            }
+        }
+
+        stage('Login to Docker Hub') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
                 }
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                script {
-                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
-                        docker.image("${DOCKERHUB_USER}/${IMAGE_NAME}:latest").push()
-                    }
-                }
+                sh "docker push ${DOCKERHUB_USER}/${IMAGE_NAME}:latest"
+            }
+        }
+
+        stage('Deploy to Kubernetes with Helm') {
+            steps {
+                sh '''
+                echo "Checking Kubernetes access"
+                kubectl get nodes
+
+                echo "Deploying application with Helm"
+                helm upgrade --install project2-helm helm/project2-helm
+                '''
             }
         }
     }
