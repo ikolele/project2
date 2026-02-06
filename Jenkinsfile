@@ -41,6 +41,9 @@ pipeline {
         }
 
         stage('Deploy to Kubernetes with Helm') {
+            environment {
+                KUBECONFIG = 'C:\\Users\\ivanm\\.kube\\config'
+            }    
             steps {
                 bat """
                 kubectl get nodes
