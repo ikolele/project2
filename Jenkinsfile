@@ -46,8 +46,17 @@ pipeline {
             }    
             steps {
                 bat """
-                kubectl get nodes
-                helm upgrade --install project2-helm helm
+                echo ===== CURRENT DIRECTORY =====
+                echo ===== CURRENT DIRECTORY =====
+                cd
+                echo ===== LIST ROOT =====
+                dir
+                echo ===== LIST HELM FOLDER =====
+                dir helm
+                echo ===== HELM TEMPLATE DEBUG =====
+                helm template project2-helm helm --debug
+                echo ===== HELM INSTALL =====
+                helm upgrade --install project2-helm helm --debug
                 """
             }
         }
