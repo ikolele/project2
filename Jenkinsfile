@@ -47,7 +47,7 @@ pipeline {
             steps {
                 bat """
                 kubectl get nodes
-                helm upgrade --install project2-helm helm/project2-helm
+                helm upgrade --install project2-helm helm
                 """
             }
         }
