@@ -54,9 +54,9 @@ pipeline {
                 echo ===== LIST HELM FOLDER =====
                 dir helm
                 echo ===== HELM TEMPLATE DEBUG =====
-                helm template project2-helm helm --debug
+                helm template project2-helm --debug
                 echo ===== HELM INSTALL =====
-                helm upgrade --install project2-helm helm --debug
+                helm upgrade --install project2-helm --debug
                 """
             }
         }
